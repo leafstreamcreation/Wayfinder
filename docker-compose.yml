@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Oracle Database 12c+ (using Oracle XE 21c which is compatible)
   oracle-db:
