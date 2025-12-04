@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Oracle Database 12c+ (using Oracle XE 21c which is compatible)
+  oracle-db:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: wayfinder-oracle
+    environment:
+      - ORACLE_PASSWORD=oracle123
+      - APP_USER=wayfinder
+      - APP_USER_PASSWORD=wayfinder123
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - ./scripts/init-db.sql:/container-entrypoint-initdb.d/01-init-db.sql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    networks:
+      - wayfinder-network
+
+  # Wayfinder API (using Mono for Linux compatibility)
+  wayfinder-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.mono
+    container_name: wayfinder-api
+    environment:
+      - ORACLE_CONNECTION_STRING=User Id=wayfinder;Password=wayfinder123;Data Source=oracle-db:1521/XEPDB1;
+      - JWT_SECRET_KEY=YourSuperSecretKeyForJwtTokenGenerationThatShouldBeAtLeast256BitsLong!
+      - JWE_ENCRYPTION_KEY=YourEncryptionKeyForJWE256Bit!!
+      - JWT_ISSUER=Wayfinder.API
+      - JWT_AUDIENCE=Wayfinder.Client
+      - JWT_EXPIRATION_MINUTES=60
+    ports:
+      - "8080:8080"
+    depends_on:
+      oracle-db:
+        condition: service_healthy
+    networks:
+      - wayfinder-network
+    restart: unless-stopped
+
+volumes:
+  oracle-data:
+
+networks:
+  wayfinder-network:
+    driver: bridge
