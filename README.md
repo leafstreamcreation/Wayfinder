@@ -55,6 +55,14 @@
 - `PUT /api/records/{id}` - Update a record
 - `DELETE /api/records/{id}` - Delete a record
 
+### TaskTags (JWE Protected)
+- `GET /api/tasktags` - Get all task-tag associations for current user
+- `GET /api/tasktags/{id}` - Get task-tag association by ID
+- `GET /api/tasktags/task/{taskId}` - Get task-tag associations by task ID
+- `GET /api/tasktags/tag/{tagId}` - Get task-tag associations by tag ID
+- `POST /api/tasktags` - Create a new task-tag association
+- `DELETE /api/tasktags/{id}` - Delete a task-tag association
+
 ## Getting Started
 
 ### Prerequisites
@@ -123,6 +131,7 @@ Wayfinder/
 │   │   ├── UsersController.cs       # User management
 │   │   ├── TagsController.cs        # Tag management
 │   │   ├── TasksController.cs       # Task management
+│   │   ├── TaskTagsController.cs    # Task-tag relationship management
 │   │   └── RecordsController.cs     # Record management
 │   ├── Models/                      # Entity models and DTOs
 │   │   ├── User.cs
@@ -136,6 +145,7 @@ Wayfinder/
 │   │   ├── UserRepository.cs
 │   │   ├── TagRepository.cs
 │   │   ├── TaskRepository.cs
+│   │   ├── TaskTagRepository.cs
 │   │   ├── RecordRepository.cs
 │   │   ├── AuthService.cs
 │   │   └── JwtService.cs

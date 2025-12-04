@@ -5,13 +5,16 @@ using Oracle.ManagedDataAccess.Client;
 namespace Wayfinder.API.Services
 {
     /// <summary>
-    /// Oracle database context for managing connections
+    /// Oracle database context for managing connections.
+    /// Each instance should be used within a single thread/request context.
+    /// Use with 'using' statement to ensure proper disposal.
     /// </summary>
     public class OracleDbContext : IDisposable
     {
         private readonly string _connectionString;
         private OracleConnection _connection;
         private bool _disposed = false;
+        private readonly object _lock = new object();
 
         public OracleDbContext()
         {
@@ -26,17 +29,25 @@ namespace Wayfinder.API.Services
 
         public OracleConnection GetConnection()
         {
-            if (_connection == null)
+            lock (_lock)
             {
-                _connection = new OracleConnection(_connectionString);
-            }
+                if (_disposed)
+                {
+                    throw new ObjectDisposedException(nameof(OracleDbContext));
+                }
 
-            if (_connection.State != System.Data.ConnectionState.Open)
-            {
-                _connection.Open();
-            }
+                if (_connection == null)
+                {
+                    _connection = new OracleConnection(_connectionString);
+                }
 
-            return _connection;
+                if (_connection.State != System.Data.ConnectionState.Open)
+                {
+                    _connection.Open();
+                }
+
+                return _connection;
+            }
         }
 
         public void Dispose()
@@ -47,21 +58,24 @@ namespace Wayfinder.API.Services
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!_disposed)
+            lock (_lock)
             {
-                if (disposing)
+                if (!_disposed)
                 {
-                    if (_connection != null)
+                    if (disposing)
                     {
-                        if (_connection.State == System.Data.ConnectionState.Open)
+                        if (_connection != null)
                         {
-                            _connection.Close();
+                            if (_connection.State == System.Data.ConnectionState.Open)
+                            {
+                                _connection.Close();
+                            }
+                            _connection.Dispose();
+                            _connection = null;
                         }
-                        _connection.Dispose();
-                        _connection = null;
                     }
+                    _disposed = true;
                 }
-                _disposed = true;
             }
         }
 

@@ -44,7 +44,7 @@ namespace Wayfinder.API.Services
         public string GenerateToken(int userId, string email)
         {
             var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
-            var encryptingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(PadKey(_encryptionKey, 32)));
+            var encryptingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(EnsureKeyLength(_encryptionKey, 32)));
             
             var signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
             var encryptingCredentials = new EncryptingCredentials(
@@ -82,7 +82,7 @@ namespace Wayfinder.API.Services
         public ClaimsPrincipal ValidateToken(string token)
         {
             var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
-            var encryptingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(PadKey(_encryptionKey, 32)));
+            var encryptingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(EnsureKeyLength(_encryptionKey, 32)));
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var validationParameters = new TokenValidationParameters
@@ -130,13 +130,16 @@ namespace Wayfinder.API.Services
             return null;
         }
 
-        private string PadKey(string key, int length)
+        private string EnsureKeyLength(string key, int length)
         {
             if (key.Length >= length)
             {
                 return key.Substring(0, length);
             }
-            return key.PadRight(length, '0');
+            
+            // Key is too short - throw exception to enforce security
+            throw new ConfigurationErrorsException(
+                $"Encryption key must be at least {length} characters long. Current length: {key.Length}");
         }
     }
 }
